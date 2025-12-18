@@ -7,4 +7,5 @@ interface ScreenshotRepository{
     suspend fun saveScreenshot(screenshot: ScreenshotEntity)
     fun getAllScreenshots(): Flow<List<ScreenshotEntity>>
     fun searchScreenshots(query: String): Flow<List<ScreenshotEntity>>
+    suspend fun deleteScreenshot(screenshot: ScreenshotEntity)
 }

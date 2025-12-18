@@ -1,6 +1,7 @@
 package com.example.thescreenshotbrain.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -23,4 +24,7 @@ interface ScreenshotDao {
             "       WHERE rawText LIKE '%'|| :query || '%'" +
             "       ORDER BY timestamp DESC")
     fun search(query: String): Flow<List<ScreenshotEntity>>
+
+    @Delete
+    suspend fun delete(screenshot: ScreenshotEntity)
 }

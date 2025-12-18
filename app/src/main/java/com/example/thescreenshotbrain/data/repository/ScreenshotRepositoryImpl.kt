@@ -21,4 +21,8 @@ class ScreenshotRepositoryImpl @Inject constructor(
     override fun searchScreenshots(query: String): Flow<List<ScreenshotEntity>>{
         return screenshotDao.search(query)
     }
+
+    override suspend fun deleteScreenshot(screenshot: ScreenshotEntity){
+        screenshotDao.delete(screenshot)
+    }
 }

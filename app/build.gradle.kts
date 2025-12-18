@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.foundation.layout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -59,29 +60,39 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // 1. ML Kit (OCR)
+    //ML Kit (OCR)
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
 
-    // 2. Coroutines (Xử lý bất đồng bộ)
+    //Coroutines (Xử lý bất đồng bộ)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
-    // 3. ViewModel & Lifecycle cho Compose
+    //ViewModel & Lifecycle cho Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
 
 
-    // 4. Coil (Để load ảnh hiển thị lên Compose cho dễ test)
+    //Coil (Để load ảnh hiển thị lên Compose cho dễ test)
     implementation("io.coil-kt:coil-compose:2.5.0")
 
-    // --- Dependency Injection (Hilt) ---
+    //Dependency Injection (Hilt)
     implementation("com.google.dagger:hilt-android:2.50")
     ksp("com.google.dagger:hilt-compiler:2.50")
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
-    // --- Local Database (Room) ---
+    //Local Database (Room)
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion") // Coroutines support
     ksp("androidx.room:room-compiler:$roomVersion")
 
+    implementation("androidx.compose.material:material-icons-extended")
+
+    //Scan QR Code
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+
+    //
+    implementation("androidx.biometric:biometric:1.1.0")
+
+    // ML Kit Entity Extraction
+    implementation("com.google.mlkit:entity-extraction:16.0.0-beta5")
 }

@@ -9,6 +9,7 @@ data class ScreenshotEntity(
     val id: Long = 0,
     val uri: String,
     val rawText: String,
+    val extractedText: String,
     val type: String,
     val timestamp: Long
 ){
@@ -16,6 +17,9 @@ data class ScreenshotEntity(
         const val TYPE_URL = "TYPE_URL"
         const val TYPE_PHONE = "TYPE_PHONE"
         const val TYPE_BANK = "TYPE_BANK"
+        const val TYPE_NOTE = "TYPE_NOTE"
+        const val TYPE_EVENT = "EVENT"
+        const val TYPE_MAP = "MAP"
         const val TYPE_OTHER = "TYPE_OTHER"
     }
 }

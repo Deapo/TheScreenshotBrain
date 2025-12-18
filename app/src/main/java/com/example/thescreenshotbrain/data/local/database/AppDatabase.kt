@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import com.example.thescreenshotbrain.data.local.dao.ScreenshotDao
 import com.example.thescreenshotbrain.data.local.entity.ScreenshotEntity
 
-@Database(entities = [ScreenshotEntity::class], version = 1, exportSchema = false)
+@Database(entities = [ScreenshotEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun screenshotDao(): ScreenshotDao
 }

@@ -26,3 +26,4 @@ class ScreenshotRepositoryImpl @Inject constructor(
         screenshotDao.delete(screenshot)
     }
 }
+

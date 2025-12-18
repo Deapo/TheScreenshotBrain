@@ -167,3 +167,4 @@ class MyLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner{
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     }
 }
+

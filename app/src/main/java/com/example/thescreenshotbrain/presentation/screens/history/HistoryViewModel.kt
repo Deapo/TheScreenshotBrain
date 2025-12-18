@@ -66,8 +66,14 @@ class HistoryViewModel @Inject constructor(
                 ScreenshotEntity.TYPE_URL -> list.filter { it.type == ScreenshotEntity.TYPE_URL }
                 ScreenshotEntity.TYPE_PHONE -> list.filter { it.type == ScreenshotEntity.TYPE_PHONE }
 
+                // --- THÊM LOGIC LỊCH VÀ MAP ---
+                ScreenshotEntity.TYPE_EVENT -> list.filter { it.type == ScreenshotEntity.TYPE_EVENT }
+                ScreenshotEntity.TYPE_MAP -> list.filter { it.type == ScreenshotEntity.TYPE_MAP }
+
                 // CASE B: Người dùng KHÔNG chọn bộ lọc nào (Màn hình chính mặc định)
-                // -> Phải ẨN các nội dung nhạy cảm (Bank, Note) đi
+                // -> Phải ẨN các nội dung nhạy cảm (Bank) đi.
+                // Lưu ý: Lịch và Map thường không nhạy cảm nên có thể cho hiện ở đây nếu muốn.
+                // Hiện tại code này sẽ hiện tất cả trừ Bank.
                 null -> list.filter { item ->
                     item.type != ScreenshotEntity.TYPE_BANK
                 }

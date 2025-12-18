@@ -10,3 +10,4 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun screenshotDao(): ScreenshotDao
 }
 
+

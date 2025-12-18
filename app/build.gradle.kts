@@ -90,9 +90,6 @@ dependencies {
     //Scan QR Code
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
 
-    //
-    implementation("androidx.biometric:biometric:1.1.0")
-
     // ML Kit Entity Extraction
     implementation("com.google.mlkit:entity-extraction:16.0.0-beta5")
 }

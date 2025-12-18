@@ -9,3 +9,4 @@ interface ScreenshotRepository{
     fun searchScreenshots(query: String): Flow<List<ScreenshotEntity>>
     suspend fun deleteScreenshot(screenshot: ScreenshotEntity)
 }
+

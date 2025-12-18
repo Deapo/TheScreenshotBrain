@@ -128,8 +128,7 @@ fun ScreenshotItem(
                     Text("Sao chép")
                 }
 
-                // Nút SMART ACTION (Chỉ hiện nếu có hành động tương ứng)
-                // Hỗ trợ: URL, PHONE, EVENT, MAP
+                // Nút SMART ACTION (Logic thông minh cho: URL, PHONE, EVENT, MAP)
                 if (isSmartActionAvailable(item.type)) {
                     TextButton(
                         onClick = { handleSmartAction(context, item) }
@@ -183,7 +182,7 @@ private fun handleSmartAction(context: Context, item: ScreenshotEntity) {
     try {
         when (item.type) {
             ScreenshotEntity.TYPE_URL -> {
-                // Logic xử lý Link thông minh (như cũ)
+                // Logic xử lý Link thông minh (Search hoặc Open URL)
                 if (text.contains("...") || text.contains("…")) {
                     val query = text
                         .replace("https://", "")
@@ -196,7 +195,6 @@ private fun handleSmartAction(context: Context, item: ScreenshotEntity) {
                     searchIntent.putExtra(SearchManager.QUERY, query)
                     searchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(searchIntent)
-                    Toast.makeText(context, "Đang tìm bài viết trên Google...", Toast.LENGTH_SHORT).show()
                 } else {
                     var finalUrl = text.trim()
                     if (!finalUrl.startsWith("http")) finalUrl = "https://$finalUrl"
@@ -213,12 +211,11 @@ private fun handleSmartAction(context: Context, item: ScreenshotEntity) {
                 context.startActivity(intent)
             }
             ScreenshotEntity.TYPE_EVENT -> {
-                // Mở ứng dụng Lịch (Calendar)
+                // Mở ứng dụng Lịch (Calendar Intent)
                 val intent = Intent(Intent.ACTION_INSERT).apply {
                     data = CalendarContract.Events.CONTENT_URI
-                    putExtra(CalendarContract.Events.TITLE, "Sự kiện từ Screenshot Brain")
-                    putExtra(CalendarContract.Events.DESCRIPTION, "Nội dung trích xuất:\n$text\n\n(Được tạo từ ảnh gốc: ${item.rawText})")
-                    // Nếu sau này bạn trích xuất được timestamp cụ thể, hãy putExtra CalendarContract.EXTRA_EVENT_BEGIN_TIME
+                    putExtra(CalendarContract.Events.TITLE, "Sự kiện từ Screenshot")
+                    putExtra(CalendarContract.Events.DESCRIPTION, "Nội dung:\n$text")
                 }
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 context.startActivity(intent)
@@ -227,14 +224,14 @@ private fun handleSmartAction(context: Context, item: ScreenshotEntity) {
                 // Mở Google Maps
                 val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(text)}")
                 val intent = Intent(Intent.ACTION_VIEW, mapUri)
-                intent.setPackage("com.google.android.apps.maps") // Cố gắng mở bằng App Maps
+                intent.setPackage("com.google.android.apps.maps") // Ưu tiên mở bằng App Maps
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
                 try {
                     context.startActivity(intent)
                 } catch (e: Exception) {
-                    // Nếu không có App Maps thì mở bằng trình duyệt
-                    val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/?q=${Uri.encode(text)}"))
+                    // Nếu không có App Maps thì mở bằng trình duyệt (Link chuẩn Google Maps)
+                    val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(text)}"))
                     webIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(webIntent)
                 }
@@ -252,8 +249,8 @@ fun TypeBadge(type: String) {
         ScreenshotEntity.TYPE_URL -> MaterialTheme.colorScheme.primary to Icons.Default.Link
         ScreenshotEntity.TYPE_PHONE -> MaterialTheme.colorScheme.tertiary to Icons.Default.Phone
         ScreenshotEntity.TYPE_BANK -> Color(0xFF9C27B0) to Icons.Default.AccountBalanceWallet // Tím
-        ScreenshotEntity.TYPE_EVENT -> Color(0xFFE91E63) to Icons.Default.Event // Hồng
-        ScreenshotEntity.TYPE_MAP -> Color(0xFFF44336) to Icons.Default.Map // Đỏ
+        ScreenshotEntity.TYPE_EVENT -> Color(0xFFE91E63) to Icons.Default.Event // Hồng (Lịch)
+        ScreenshotEntity.TYPE_MAP -> Color(0xFFF44336) to Icons.Default.Map // Đỏ (Bản đồ)
         ScreenshotEntity.TYPE_NOTE -> Color(0xFFFF9800) to Icons.Default.Description // Cam
         else -> MaterialTheme.colorScheme.secondary to Icons.Default.Photo
     }

@@ -28,3 +28,4 @@ interface ScreenshotDao {
     @Delete
     suspend fun delete(screenshot: ScreenshotEntity)
 }
+

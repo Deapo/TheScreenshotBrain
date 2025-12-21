@@ -11,21 +11,21 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ScreenshotDao {
 
-    //Chen screenshot moi
+    //Insert new screenshot
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(screenshot: ScreenshotEntity)
 
-    //Lay toan bo danh sach
+    //Get all screenshot
     @Query("SELECT * FROM screenshot ORDER BY timestamp DESC")
     fun getAllFlow(): Flow<List<ScreenshotEntity>>
 
-    //Tim kiem noi dung cua Text
-    @Query("SELECT * FROM screenshot " +
-            "       WHERE rawText LIKE '%'|| :query || '%'" +
-            "       ORDER BY timestamp DESC")
+    @Query("SELECT * FROM screenshot WHERE id = :id")
+    suspend fun getScreenshotById(id: Long): ScreenshotEntity?
+
+    // Search
+    @Query("SELECT * FROM screenshot WHERE extractedText LIKE '%' || :query || '%' ORDER BY timestamp DESC")
     fun search(query: String): Flow<List<ScreenshotEntity>>
 
     @Delete
     suspend fun delete(screenshot: ScreenshotEntity)
 }
-

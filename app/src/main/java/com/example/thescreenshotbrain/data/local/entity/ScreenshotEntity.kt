@@ -11,6 +11,7 @@ data class ScreenshotEntity(
     val rawText: String,
     val extractedText: String,
     val type: String,
+    val title: String = "",
     val timestamp: Long
 ){
     companion object{
@@ -23,3 +24,4 @@ data class ScreenshotEntity(
         const val TYPE_OTHER = "TYPE_OTHER"
     }
 }
+

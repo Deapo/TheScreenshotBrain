@@ -25,5 +25,9 @@ class ScreenshotRepositoryImpl @Inject constructor(
     override suspend fun deleteScreenshot(screenshot: ScreenshotEntity){
         screenshotDao.delete(screenshot)
     }
+
+    override suspend fun getScreenshotById(id: Long): ScreenshotEntity? {
+        return screenshotDao.getScreenshotById(id)
+    }
 }
 

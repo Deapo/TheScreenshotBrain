@@ -20,34 +20,23 @@ object VietQrParser {
 
     fun extractBankInfo(qrContent: String): String? {
         try {
-            // BƯỚC 1: VỆ SINH TUYỆT ĐỐI
-            // Xóa tất cả khoảng trắng, xuống dòng, tab... để chuỗi liền mạch
             val cleanContent = qrContent.replace("\\s+".toRegex(), "")
             Log.d("VietQrParser", "Raw QR Content: $cleanContent")
 
-            // BƯỚC 2: Parse toàn bộ
             val rootTags = parseTlvToMap(cleanContent)
 
-            // Log xem tìm thấy những tag nào (Để debug)
             Log.d("VietQrParser", "Found Tags: $rootTags")
 
-            // BƯỚC 3: Lấy dữ liệu
-            // Thử lấy Tag 59 (Tên chủ thẻ)
             val ownerName = rootTags["59"]?.uppercase() ?: "CHỦ TÀI KHOẢN"
 
-            // Lấy thông tin Bank (Tag 38 -> Tag 01 -> Tag 00/01)
             val tag38Content = rootTags["38"] ?: return null
-            val beneficiaryTags = parseTlvToMap(tag38Content) // Cấp 2
+            val beneficiaryTags = parseTlvToMap(tag38Content)
 
-            // Một số QR lồng nhau 2 cấp, một số 3 cấp. Kiểm tra kỹ:
-            // Chuẩn VietQR: 38 -> 01 (Beneficiary Org) -> 00(BIN) & 01(STK)
             var finalTags = beneficiaryTags
             if (beneficiaryTags.containsKey("01")) {
                 val tag01Content = beneficiaryTags["01"]!!
-                // Kiểm tra xem value của tag 01 có phải là TLV không hay là STK luôn?
-                // Nếu nó bắt đầu bằng "00" (BIN tag) và độ dài hợp lý thì parse tiếp
                 if (tag01Content.startsWith("00") && tag01Content.length > 6) {
-                    finalTags = parseTlvToMap(tag01Content) // Cấp 3
+                    finalTags = parseTlvToMap(tag01Content)
                 }
             }
 

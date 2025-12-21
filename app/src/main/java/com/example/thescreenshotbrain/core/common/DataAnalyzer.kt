@@ -3,7 +3,7 @@ package com.example.thescreenshotbrain.core.common
 import android.util.Patterns
 import com.example.thescreenshotbrain.data.local.entity.ScreenshotEntity
 import com.google.mlkit.nl.entityextraction.Entity
-import com.google.mlkit.nl.entityextraction.EntityAnnotation // Nhớ import cái này
+import com.google.mlkit.nl.entityextraction.EntityAnnotation
 import com.google.mlkit.vision.text.Text
 
 data class AnalysisResult(
@@ -15,10 +15,7 @@ data class AnalysisResult(
 object DataAnalyzer {
     private val PHONE_REGEX = Regex("(03|05|07|08|09)[0-9]{8}\\b")
 
-    // SỬA 1: Đổi tham số đầu vào từ List<Entity> thành List<EntityAnnotation>
     fun analyze(visionText: Text, qrContent: String?, annotations: List<EntityAnnotation>): AnalysisResult {
-
-        // 1. XỬ LÝ BANK / QR (Giữ nguyên)
         if (!qrContent.isNullOrBlank()) {
             var finalInfo = VietQrParser.extractBankInfo(qrContent)
             if (finalInfo != null && finalInfo.contains("CHỦ TÀI KHOẢN")) {
@@ -32,68 +29,114 @@ object DataAnalyzer {
             }
         }
 
+        val cleanedText = TextFilter.cleanText(visionText.text)
         val rawText = visionText.text
 
-        // 2. URL (Giữ nguyên)
         val urlMatcher = Patterns.WEB_URL.matcher(rawText)
         if (urlMatcher.find()) {
             return AnalysisResult(ScreenshotEntity.TYPE_URL, urlMatcher.group())
         }
 
-        // 3. Phone (Giữ nguyên)
         val phoneMatch = PHONE_REGEX.find(rawText)
         if (phoneMatch != null) {
             return AnalysisResult(ScreenshotEntity.TYPE_PHONE, phoneMatch.value)
         }
+        
+        val timePatterns = listOf(
+            Regex("\\d{1,2}h\\s+\\d{1,2}/\\d{1,2}"),
+            Regex("TH\\s*\\d+\\s+LÚC\\s+\\d{1,2}:\\d{2}", RegexOption.IGNORE_CASE),
+            Regex("\\d{1,2}/\\d{1,2}(?:/\\d{2,4})?\\s+\\d{1,2}:\\d{2}"),
+            Regex("\\d{1,2}:\\d{2}\\s+\\d{1,2}/\\d{1,2}(?:/\\d{2,4})?"),
+        )
+        
+        for (pattern in timePatterns) {
+            val timeMatch = pattern.find(rawText)
+            if (timeMatch != null) {
+                val timeText = timeMatch.value.trim()
+                if (timeText.length > 5 && !PHONE_REGEX.containsMatchIn(timeText)) {
+                    return AnalysisResult(
+                        type = ScreenshotEntity.TYPE_EVENT,
+                        extractedContent = timeText,
+                        extraData = null
+                    )
+                }
+            }
+        }
+        
+        val addressPattern = Regex(
+            "\\d+\\s+[A-ZÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ\\s,]+" +
+            "(?:Đường|Phường|Quận|Huyện|Tỉnh|Thành phố|Việt Nam|VN)",
+            RegexOption.IGNORE_CASE
+        )
+        val addressMatch = addressPattern.find(rawText)
+        if (addressMatch != null) {
+            val address = addressMatch.value.trim()
+            if (address.length > 20 && 
+                (address.contains("Đường", ignoreCase = true) ||
+                 address.contains("Phường", ignoreCase = true) ||
+                 address.contains("Quận", ignoreCase = true) ||
+                 address.contains("Tỉnh", ignoreCase = true) ||
+                 address.contains("Thành phố", ignoreCase = true) ||
+                 address.contains("Việt Nam", ignoreCase = true))) {
+                return AnalysisResult(ScreenshotEntity.TYPE_MAP, address)
+            }
+        }
 
-        // 4. EVENT & MAP (SỬA LẠI LOGIC DUYỆT)
-        // Duyệt qua từng "Vỏ hộp" (Annotation) để lấy vị trí
         for (annotation in annotations) {
-            val entities = annotation.entities // Lấy danh sách "Ruột" bên trong
+            val entities = annotation.entities
 
             for (entity in entities) {
                 when (entity.type) {
-                    // A. Phát hiện Ngày/Giờ -> TYPE_EVENT
                     Entity.TYPE_DATE_TIME -> {
                         val dateTimeEntity = entity.asDateTimeEntity()
                         val timestamp = dateTimeEntity?.timestampMillis
 
-                        // Lấy chính xác đoạn text mô tả thời gian (VD: "tomorrow at 9pm")
-                        // Lưu ý: Có thể dùng annotation.annotatedText hoặc cắt từ rawText
-                        val eventText = rawText.substring(annotation.start, annotation.end)
+                        if (annotation.start < rawText.length && annotation.end <= rawText.length) {
+                            val eventText = rawText.substring(annotation.start, annotation.end)
 
-                        return AnalysisResult(
-                            type = ScreenshotEntity.TYPE_EVENT,
-                            extractedContent = eventText, // Lưu đoạn text chứa ngày giờ
-                            extraData = timestamp
-                        )
+                            return AnalysisResult(
+                                type = ScreenshotEntity.TYPE_EVENT,
+                                extractedContent = eventText,
+                                extraData = timestamp
+                            )
+                        }
                     }
 
-                    // B. Phát hiện Địa chỉ -> TYPE_MAP
                     Entity.TYPE_ADDRESS -> {
-                        // SỬA 2: Lấy start/end từ annotation (Vỏ hộp) -> Hết lỗi Unresolved reference
-                        val addressText = rawText.substring(annotation.start, annotation.end)
+                        if (annotation.start < rawText.length && annotation.end <= rawText.length) {
+                            val addressText = rawText.substring(annotation.start, annotation.end)
 
-                        return AnalysisResult(
-                            type = ScreenshotEntity.TYPE_MAP,
-                            extractedContent = addressText
-                        )
+                            return AnalysisResult(
+                                type = ScreenshotEntity.TYPE_MAP,
+                                extractedContent = addressText
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // 5. Note (Giữ nguyên)
-        if (rawText.length > 50) {
-            return AnalysisResult(ScreenshotEntity.TYPE_NOTE, rawText)
+        val determinedType = ScoringAlgorithm.determineType(cleanedText, qrContent)
+        
+        val finalContent = when (determinedType) {
+            ScreenshotEntity.TYPE_MAP -> {
+                addressMatch?.value?.trim() ?: cleanedText
+            }
+            ScreenshotEntity.TYPE_NOTE -> {
+                cleanedText
+            }
+            else -> cleanedText
+        }
+        
+        if (determinedType == ScreenshotEntity.TYPE_NOTE && cleanedText.length > 50) {
+            return AnalysisResult(ScreenshotEntity.TYPE_NOTE, finalContent)
         }
 
-        return AnalysisResult(ScreenshotEntity.TYPE_OTHER, rawText.trim())
+        return AnalysisResult(determinedType, finalContent.trim())
     }
 
-    // Giữ nguyên hàm findNameFromOcr bên dưới...
+
     private fun findNameFromOcr(visionText: Text): String {
-        // ... (Code cũ của bạn)
         val ignoredWords = listOf("VIETQR", "NAPAS", "BANK", "CHUYEN", "TIEN", "QR", "SCAN", "QUET", "MA")
         for (block in visionText.textBlocks) {
             for (line in block.lines) {

@@ -1,5 +1,6 @@
 package com.example.thescreenshotbrain.presentation.overlay
 
+import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
@@ -7,7 +8,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.provider.CalendarContract
 import android.provider.Settings
+import com.example.thescreenshotbrain.core.common.DateTimeParser
 import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.WindowManager
@@ -131,6 +134,47 @@ class FloatingBubbleManager @Inject constructor(
                     Intent(Intent.ACTION_DIAL, Uri.parse("tel:$cleanPhone"))
                 }
 
+                ScreenshotEntity.TYPE_MAP -> {
+                    //open ggmap, address
+                    val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(text)}")
+                    val mapIntent = Intent(Intent.ACTION_VIEW, mapUri)
+                    mapIntent.setPackage("com.google.android.apps.maps")
+                    
+                    //If don't have ggmap, use web
+                    if (mapIntent.resolveActivity(context.packageManager) == null) {
+                        Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(text)}"))
+                    } else {
+                        mapIntent
+                    }
+                }
+
+                ScreenshotEntity.TYPE_EVENT -> {
+                    // Parse thời gian từ text
+                    android.util.Log.d("FloatingBubble", "Parsing event text: $text")
+                    val eventCalendar = DateTimeParser.findAndParseDateTime(text)
+                    
+                    if (eventCalendar != null) {
+                        val dateFormat = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault())
+                        android.util.Log.d("FloatingBubble", "Parsed date: ${dateFormat.format(eventCalendar.time)}")
+                    } else {
+                        android.util.Log.w("FloatingBubble", "Failed to parse date from: $text")
+                    }
+                    
+                    //open calendar
+                    Intent(Intent.ACTION_INSERT).apply {
+                        data = CalendarContract.Events.CONTENT_URI
+                        putExtra(CalendarContract.Events.TITLE, "Sự kiện từ Screenshot")
+                        putExtra(CalendarContract.Events.DESCRIPTION, "Nội dung:\n$text")
+                        
+                        //set time if can parse
+                        eventCalendar?.let { cal ->
+                            putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, cal.timeInMillis)
+                            putExtra(CalendarContract.EXTRA_EVENT_END_TIME, cal.timeInMillis + (60 * 60 * 1000)) // 1 giờ sau
+                            putExtra(CalendarContract.Events.ALL_DAY, false)
+                        }
+                    }
+                }
+
                 else -> null
             }
 
@@ -138,11 +182,13 @@ class FloatingBubbleManager @Inject constructor(
 
             if (intent != null) {
                 context.startActivity(intent)
+            } else {
+                Toast.makeText(context, "Không hỗ trợ loại này: $type", Toast.LENGTH_SHORT).show()
             }
 
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(context, "Không thể mở: $text", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Không thể mở: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 }
@@ -167,4 +213,3 @@ class MyLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner{
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     }
 }
-

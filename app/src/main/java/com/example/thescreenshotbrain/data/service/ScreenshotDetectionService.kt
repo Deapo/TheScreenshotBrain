@@ -17,6 +17,8 @@ import com.example.thescreenshotbrain.R
 import com.example.thescreenshotbrain.core.common.BarcodeHelper
 import com.example.thescreenshotbrain.core.common.DataAnalyzer
 import com.example.thescreenshotbrain.core.common.EntityExtractionHelper
+import com.example.thescreenshotbrain.core.common.ImagePreprocessor
+import com.example.thescreenshotbrain.core.common.TitleGenerator
 import com.example.thescreenshotbrain.data.local.entity.ScreenshotEntity
 import com.example.thescreenshotbrain.domain.repository.ScreenshotRepository
 import com.example.thescreenshotbrain.domain.usecase.TextRecognitionHelper
@@ -145,17 +147,40 @@ class ScreenshotDetectionService : Service() {
     private fun processScreenshot(uri: Uri, timestamp: Long) {
         serviceScope.launch {
             try {
+                //Cắt bỏ 150px trên cùng
+                val processedBitmap = ImagePreprocessor.cropTopArea(uri, this@ScreenshotDetectionService, 150)
+
                 // read text and find qr code
-                val ocrJob = async { textRecognitionHelper.processImageForText(uri) }
+                val ocrJob = if (processedBitmap != null) {
+                    async { 
+                        try {
+                            textRecognitionHelper.processBitmapForText(processedBitmap)
+                        } finally {
+                            // Giải phóng bitmap sau khi dùng xong
+                            if (!processedBitmap.isRecycled) {
+                                processedBitmap.recycle()
+                            }
+                        }
+                    }
+                } else {
+                    async { textRecognitionHelper.processImageForText(uri) }
+                }
                 val qrJob = async { barcodeHelper.extractQrCode(uri) }
 
-                // Đợi cả 2 cùng xong (await)
+                // Wait both
                 val mlText = ocrJob.await()
                 val qrContent = qrJob.await()
 
                 val entities = entityExtractionHelper.extractEntities(mlText.text)
 
                 val result = DataAnalyzer.analyze(mlText, qrContent, entities)
+                
+                //Generate Smart Title
+                val smartTitle = TitleGenerator.generateTitle(
+                    result.extractedContent,
+                    result.type,
+                    mlText.text
+                )
 
                 var finalUriString = uri.toString()
 
@@ -175,12 +200,13 @@ class ScreenshotDetectionService : Service() {
                         rawText = mlText.text,
                         extractedText = result.extractedContent,
                         type = result.type,
+                        title = smartTitle,
                         timestamp = timestamp
                     )
 
                     repository.saveScreenshot(entity)
 
-                    // Hiện bong bóng
+                    //Show bubble
                     withContext(Dispatchers.Main) {
                         overlayManager.showFloatingBubble(result.extractedContent, result.type)
                     }
@@ -219,3 +245,4 @@ class ScreenshotDetectionService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 }
+

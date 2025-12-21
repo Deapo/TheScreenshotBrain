@@ -5,6 +5,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -47,7 +49,7 @@ fun floatingBubble(
         ){
             //Type
             Text(
-                text = "Đã phát hiện $type",
+                text = "Đã phát hiện ${getTypeDisplayName(type)}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -79,17 +81,32 @@ fun floatingBubble(
                     Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
                 }
 
-                //Button action for url and phone
-                if(type == ScreenshotEntity.TYPE_URL || type == ScreenshotEntity.TYPE_PHONE){
+                //Button action for url, phone, map, and event
+                if(type == ScreenshotEntity.TYPE_URL || type == ScreenshotEntity.TYPE_PHONE ||
+                   type == ScreenshotEntity.TYPE_MAP || type == ScreenshotEntity.TYPE_EVENT){
                     FilledTonalButton(
                         onClick = onOpenAction,
                         contentPadding = PaddingValues(horizontal = 16.dp)
                     ){
-                        Icon(Icons.Default.OpenInNew, contentDescription = null)
+                        Icon(
+                            when(type) {
+                                ScreenshotEntity.TYPE_URL -> Icons.Default.OpenInNew
+                                ScreenshotEntity.TYPE_PHONE -> Icons.Default.OpenInNew
+                                ScreenshotEntity.TYPE_MAP -> Icons.Default.LocationOn
+                                ScreenshotEntity.TYPE_EVENT -> Icons.Default.DateRange
+                                else -> Icons.Default.OpenInNew
+                            },
+                            contentDescription = null
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            if(type == ScreenshotEntity.TYPE_URL) "Mở trong trình duyệt"
-                            else "Gọi điện thoại",
+                            when(type) {
+                                ScreenshotEntity.TYPE_URL -> "Mở trong trình duyệt"
+                                ScreenshotEntity.TYPE_PHONE -> "Gọi điện thoại"
+                                ScreenshotEntity.TYPE_MAP -> "Chỉ đường"
+                                ScreenshotEntity.TYPE_EVENT -> "Thêm vào lịch"
+                                else -> "Mở"
+                            },
                         )
                     }
                 }
@@ -104,5 +121,18 @@ fun floatingBubble(
             }
 
         }
+    }
+}
+
+private fun getTypeDisplayName(type: String): String {
+    return when (type) {
+        ScreenshotEntity.TYPE_BANK -> "BANK"
+        ScreenshotEntity.TYPE_URL -> "URL"
+        ScreenshotEntity.TYPE_PHONE -> "SĐT"
+        ScreenshotEntity.TYPE_EVENT -> "LỊCH"
+        ScreenshotEntity.TYPE_MAP -> "MAP"
+        ScreenshotEntity.TYPE_NOTE -> "NOTE"
+        ScreenshotEntity.TYPE_OTHER -> "KHÁC"
+        else -> type
     }
 }

@@ -18,7 +18,7 @@ fun SettingScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    // Lưu trạng thái service vào SharedPreferences đơn giản
+    // save state service into SharedPreferences
     val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     var isServiceEnabled by remember {
         mutableStateOf(prefs.getBoolean("service_enabled", true))
@@ -37,7 +37,7 @@ fun SettingScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(16.dp)) {
-            // Mục: Bật/Tắt Service
+            //On off service
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -56,7 +56,6 @@ fun SettingScreen(
                         isServiceEnabled = enabled
                         prefs.edit().putBoolean("service_enabled", enabled).apply()
 
-                        // Kích hoạt/Tắt Service ngay lập tức
                         val intent = Intent(context, ScreenshotDetectionService::class.java)
                         if (enabled) {
                             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

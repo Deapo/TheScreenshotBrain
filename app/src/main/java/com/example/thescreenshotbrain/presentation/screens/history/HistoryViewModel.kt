@@ -33,7 +33,6 @@ class HistoryViewModel @Inject constructor(
     }
 
     fun onFilterSelected(type: String?) {
-        // Nếu chọn lại cái đang chọn thì bỏ chọn (Toggle)
         if (_filterType.value == type) {
             _filterType.value = null
         } else {
@@ -53,32 +52,22 @@ class HistoryViewModel @Inject constructor(
     ) { query, type ->
         Pair(query, type)
     }.flatMapLatest { (query, type) ->
-        // 1. Lấy dữ liệu thô từ DB
+        //get data from db
         val flow = if (query.isBlank()) repository.getAllScreenshots() else repository.searchScreenshots(query)
 
-        // 2. Xử lý Logic lọc (QUAN TRỌNG)
+        //logic
         flow.map { list ->
             when (type) {
-                // CASE A: Người dùng đang chọn một bộ lọc cụ thể
-                // (Lúc này UI đã lo việc xác thực vân tay rồi, ViewModel chỉ việc trả về đúng loại đó)
                 ScreenshotEntity.TYPE_BANK -> list.filter { it.type == ScreenshotEntity.TYPE_BANK }
                 ScreenshotEntity.TYPE_NOTE -> list.filter { it.type == ScreenshotEntity.TYPE_NOTE }
                 ScreenshotEntity.TYPE_URL -> list.filter { it.type == ScreenshotEntity.TYPE_URL }
                 ScreenshotEntity.TYPE_PHONE -> list.filter { it.type == ScreenshotEntity.TYPE_PHONE }
-
-                // --- THÊM LOGIC LỊCH VÀ MAP ---
                 ScreenshotEntity.TYPE_EVENT -> list.filter { it.type == ScreenshotEntity.TYPE_EVENT }
                 ScreenshotEntity.TYPE_MAP -> list.filter { it.type == ScreenshotEntity.TYPE_MAP }
+                ScreenshotEntity.TYPE_OTHER -> list.filter { it.type == ScreenshotEntity.TYPE_OTHER }
 
-                // CASE B: Người dùng KHÔNG chọn bộ lọc nào (Màn hình chính mặc định)
-                // -> Phải ẨN các nội dung nhạy cảm (Bank) đi.
-                // Lưu ý: Lịch và Map thường không nhạy cảm nên có thể cho hiện ở đây nếu muốn.
-                // Hiện tại code này sẽ hiện tất cả trừ Bank.
-                null -> list.filter { item ->
-                    item.type != ScreenshotEntity.TYPE_BANK
-                }
+                null -> list
 
-                // Fallback (cho các trường hợp khác nếu có)
                 else -> list.filter { it.type == type }
             }
         }

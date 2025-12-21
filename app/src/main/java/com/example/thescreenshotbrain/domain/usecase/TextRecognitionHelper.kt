@@ -1,6 +1,7 @@
 package com.example.thescreenshotbrain.domain.usecase
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
@@ -18,6 +19,22 @@ class TextRecognitionHelper @Inject constructor(
     suspend fun processImageForText(uri: Uri): Text {
         return try {
             val image = InputImage.fromFilePath(context, uri)
+            recognizer.process(image).await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        }
+    }
+    
+    suspend fun processBitmapForText(bitmap: Bitmap): Text {
+        return try {
+            //Check bitmap
+            if (bitmap.isRecycled) {
+                throw IllegalStateException("Bitmap has been recycled")
+            }
+            
+            //Convert bitmap to InputImage
+            val image = InputImage.fromBitmap(bitmap, 0)
             recognizer.process(image).await()
         } catch (e: Exception) {
             e.printStackTrace()

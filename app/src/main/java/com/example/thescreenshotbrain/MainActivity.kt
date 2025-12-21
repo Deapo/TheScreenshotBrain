@@ -9,7 +9,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,36 +19,34 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.example.thescreenshotbrain.data.service.ScreenshotDetectionService
-import com.example.thescreenshotbrain.presentation.screens.history.HistoryScreen
-import com.example.thescreenshotbrain.presentation.screens.setting.SettingScreen
+import com.example.thescreenshotbrain.presentation.navigation.NavGraph
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
-    // 1. Định nghĩa danh sách quyền cần xin (Tùy theo phiên bản Android)
     private val permissionsToRequest = mutableListOf<String>().apply {
-        // Quyền đọc ảnh
+        //permission read image
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13+
             add(Manifest.permission.READ_MEDIA_IMAGES)
-            add(Manifest.permission.POST_NOTIFICATIONS) // Quyền thông báo
-        } else { // Android 12 trở xuống
+            add(Manifest.permission.POST_NOTIFICATIONS) // permisson noti
+        } else {
             add(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
     }.toTypedArray()
 
-    // 2. Tạo Launcher để hứng kết quả xin quyền
+    //create launch activity for result
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        // Kiểm tra xem user có đồng ý hết không
+        //check all permisson granted
         val allGranted = permissions.entries.all { it.value }
         if (allGranted) {
-            // Nếu đã cấp quyền Storage/Noti -> Tiếp tục kiểm tra quyền Overlay
+            //if all granted -> check permission overlay
             checkOverlayPermission()
         } else {
             Toast.makeText(this, "Bạn cần cấp quyền Thư viện và Thông báo để App hoạt động!", Toast.LENGTH_LONG).show()
-            // Mở trang Cài đặt ứng dụng để user cấp tay nếu họ lỡ bấm "Từ chối vĩnh viễn"
+            // If not granted, open app settings
             openAppSettings()
         }
     }
@@ -57,10 +54,10 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 3. Bắt đầu quy trình kiểm tra quyền ngay khi mở App
+        //start to check permisson and request
         checkAndRequestPermissions()
 
-        // Khởi động Service nếu đã bật trong setting
+        //start service
         val prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
         if (prefs.getBoolean("service_enabled", true)) {
             startScreenshotService()
@@ -68,33 +65,24 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             MaterialTheme {
-                var currentScreen by remember { mutableStateOf("history") }
-
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    when (currentScreen) {
-                        "history" -> HistoryScreen(
-                            onNavigateToSettings = { currentScreen = "settings" }
-                        )
-                        "settings" -> SettingScreen(
-                            onBack = { currentScreen = "history" }
-                        )
-                    }
+                    NavGraph()
                 }
             }
         }
     }
 
     private fun checkAndRequestPermissions() {
-        // Lọc ra các quyền CHƯA được cấp
+        //filter permission not granted
         val permissionsNeeded = permissionsToRequest.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
 
         if (permissionsNeeded.isNotEmpty()) {
-            // Nếu thiếu quyền -> Hiện hộp thoại xin quyền hệ thống
+            //ìf not granted -> request
             requestPermissionLauncher.launch(permissionsNeeded.toTypedArray())
         } else {
-            // Nếu đã đủ quyền Storage/Noti -> Kiểm tra tiếp quyền Overlay
+            //if granted -> check permission overlay
             checkOverlayPermission()
         }
     }
@@ -103,7 +91,7 @@ class MainActivity : FragmentActivity() {
         if (!Settings.canDrawOverlays(this)) {
             Toast.makeText(this, "Bước cuối: Cấp quyền 'Hiển thị trên ứng dụng khác'", Toast.LENGTH_LONG).show()
 
-            // Mở màn hình cài đặt Overlay
+            //open overlay permission
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 Uri.parse("package:$packageName")
@@ -123,7 +111,7 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun startScreenshotService() {
-        // Chỉ start service khi đã có đủ quyền Overlay
+        // only start service if permission granted
         if (Settings.canDrawOverlays(this)) {
             val intent = Intent(this, ScreenshotDetectionService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

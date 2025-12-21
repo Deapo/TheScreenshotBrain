@@ -22,13 +22,14 @@ import com.example.thescreenshotbrain.presentation.screens.history.components.Sc
 @Composable
 fun HistoryScreen(
     viewModel: HistoryViewModel = hiltViewModel(),
-    onNavigateToSettings: () -> Unit // Callback để mở màn hình Settings
+    onNavigateToSettings: () -> Unit,
+    onNavigateToDetail: (Long) -> Unit
 ) {
     val screenshots by viewModel.screenshots.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val currentFilter by viewModel.filterType.collectAsState()
 
-    // Scroll state cho hàng Filter (để cuộn ngang nếu nhiều nút)
+    // Scroll state for Filter
     val scrollState = rememberScrollState()
 
     Scaffold(
@@ -52,12 +53,12 @@ fun HistoryScreen(
                     onQueryChange = { viewModel.setSearchQuery(it) }
                 )
 
-                // Filter type (Thêm horizontalScroll để cuộn ngang)
+                // Filter type
                 Row(
                     modifier = Modifier
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .fillMaxWidth()
-                        .horizontalScroll(scrollState), // <- Cho phép cuộn ngang
+                        .horizontalScroll(scrollState),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // 1. WEB
@@ -67,7 +68,7 @@ fun HistoryScreen(
                         label = { Text("Web") }
                     )
 
-                    // 2. BANK (Đã gỡ bỏ bảo mật, bấm là chọn luôn)
+                    // 2. BANK
                     FilterChip(
                         label = { Text("Bank") },
                         selected = currentFilter == ScreenshotEntity.TYPE_BANK,
@@ -81,14 +82,14 @@ fun HistoryScreen(
                         label = { Text("SĐT") }
                     )
 
-                    // 4. CALENDAR (LỊCH)
+                    // 4. CALENDAR
                     FilterChip(
                         selected = currentFilter == ScreenshotEntity.TYPE_EVENT,
                         onClick = { viewModel.onFilterSelected(ScreenshotEntity.TYPE_EVENT) },
                         label = { Text("Lịch") }
                     )
 
-                    // 5. MAP (BẢN ĐỒ)
+                    // 5. MAP
                     FilterChip(
                         selected = currentFilter == ScreenshotEntity.TYPE_MAP,
                         onClick = { viewModel.onFilterSelected(ScreenshotEntity.TYPE_MAP) },
@@ -118,7 +119,9 @@ fun HistoryScreen(
                 items(screenshots, key = { it.id }) { screenshot ->
                     ScreenshotItem(
                         item = screenshot,
-                        onClick = {},
+                        onClick = {
+                            onNavigateToDetail(screenshot.id)
+                        },
                         onDeleteClick = {
                             viewModel.deleteScreenshot(screenshot)
                         }

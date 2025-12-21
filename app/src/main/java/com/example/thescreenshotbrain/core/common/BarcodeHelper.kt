@@ -14,7 +14,6 @@ import javax.inject.Inject
 class BarcodeHelper @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    // Cấu hình chỉ quét QR Code để tối ưu tốc độ
     private val options = BarcodeScannerOptions.Builder()
         .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
         .build()
@@ -26,7 +25,6 @@ class BarcodeHelper @Inject constructor(
             val image = InputImage.fromFilePath(context, uri)
             val barcodes = scanner.process(image).await()
 
-            // Lấy giá trị raw của mã QR đầu tiên tìm thấy
             val qrContent = barcodes.firstOrNull()?.rawValue
 
             if (qrContent != null) {

@@ -6,5 +6,3 @@ import dagger.hilt.android.HiltAndroidApp
 @HiltAndroidApp
 class ScreenshotBrainApplication : Application() {
 }
-
-
